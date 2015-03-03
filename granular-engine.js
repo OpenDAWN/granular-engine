@@ -5,7 +5,6 @@
  */
 "use strict";
 
-var audioContext = require("audio-context");
 var TimeEngine = require("time-engine");
 
 /**
@@ -20,124 +19,127 @@ var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"
    * The grain position (grain onset or center time in the audio buffer) is optionally
    * determined by the engine's currentPosition attribute.
    */
-  function GranularEngine() {var buffer = arguments[0];if(buffer === void 0)buffer = null;
-    super$0.call(this);
+  function GranularEngine() {var options = arguments[0];if(options === void 0)options = {};var audioContext = arguments[1];if(audioContext === void 0)audioContext = null;
+    super$0.call(this, audioContext);
 
     /**
      * Audio buffer
      * @type {AudioBuffer}
      */
-    this.buffer = buffer;
+    this.buffer = options.buffer || null;
 
     /**
      * Absolute grain period in sec
      * @type {Number}
      */
-    this.periodAbs = 0.01;
+    this.periodAbs = options.periodAbs || 0.01;
 
     /**
      * Grain period relative to absolute duration
      * @type {Number}
      */
-    this.periodRel = 0;
+    this.periodRel = options.periodRel || 0;
 
     /**
      * Amout of random grain period variation relative to grain period
      * @type {Number}
      */
-    this.periodVar = 0;
+    this.periodVar = options.periodVar || 0;
 
     /**
      * Grain position (onset time in audio buffer) in sec
      * @type {Number}
      */
-    this.position = 0;
+    this.position = options.position || 0;
 
     /**
      * Amout of random grain position variation in sec
      * @type {Number}
      */
-    this.positionVar = 0.003;
+    this.positionVar = options.positionVar || 0.003;
 
     /**
      * Absolute grain duration in sec
      * @type {Number}
      */
-    this.durationAbs = 0.1; // absolute grain duration
+    this.durationAbs = options.durationAbs || 0.1; // absolute grain duration
 
     /**
      * Grain duration relative to grain period (overlap)
      * @type {Number}
      */
-    this.durationRel = 0;
+    this.durationRel = options.durationRel || 0;
 
     /**
      * Absolute attack time in sec
      * @type {Number}
      */
-    this.attackAbs = 0;
+    this.attackAbs = options.attackAbs || 0;
 
     /**
      * Attack time relative to grain duration
      * @type {Number}
      */
-    this.attackRel = 0.5;
+    this.attackRel = options.attackRel || 0.5;
 
     /**
      * Shape of attack
      * @type {String} 'lin' for linear ramp, 'exp' for exponential
      */
-    this.attackShape = 'lin';
+    this.attackShape = options.attackShape || 'lin';
 
     /**
      * Absolute release time in sec
      * @type {Number}
      */
-    this.releaseAbs = 0;
+    this.releaseAbs = options.releaseAbs || 0;
 
     /**
      * Release time relative to grain duration
      * @type {Number}
      */
-    this.releaseRel = 0.5;
+    this.releaseRel = options.releaseRel || 0.5;
 
     /**
      * Shape of release
      * @type {String} 'lin' for linear ramp, 'exp' for exponential
      */
-    this.releaseShape = 'lin';
+    this.releaseShape = options.releaseShape || 'lin';
 
     /**
      * Offset (start/end value) for exponential attack/release
      * @type {Number} offset
      */
-    this.expRampOffset = 0.0001;
+    this.expRampOffset = options.expRampOffset || 0.0001;
 
     /**
      * Grain resampling in cent
      * @type {Number}
      */
-    this.resampling = 0;
+    this.resampling = options.resampling || 0;
 
     /**
      * Amout of random resampling variation in cent
      * @type {Number}
      */
-    this.resamplingVar = 0;
+    this.resamplingVar = options.resamplingVar || 0;
 
     /**
      * Whether the grain position refers to the center of the grain (or the beginning)
      * @type {Bool}
      */
-    this.centered = true;
+    this.centered = options.centered || true;
 
     /**
      * Whether the audio buffer and grain position are considered as cyclic
      * @type {Bool}
      */
-    this.cyclic = false;
+    this.cyclic = options.cyclic || false;
 
-    this.outputNode = this.__gainNode = audioContext.createGain();
+    this.__gainNode = super$0.audioContext.createGain();
+    this.__gainNode.gain.value = options.gain || 1;
+
+    this.outputNode = this.__gainNode;
   }if(super$0!==null)SP$0(GranularEngine,super$0);GranularEngine.prototype = OC$0(super$0!==null?super$0.prototype:null,{"constructor":{"value":GranularEngine,"configurable":true,"writable":true}, bufferDuration: {"get": $bufferDuration_get$0, "configurable":true,"enumerable":true}, currentPosition: {"get": $currentPosition_get$0, "configurable":true,"enumerable":true}, playbackLength: {"get": $playbackLength_get$0, "configurable":true,"enumerable":true}, gain: {"get": $gain_get$0, "set": $gain_set$0, "configurable":true,"enumerable":true}});DP$0(GranularEngine,"prototype",{"configurable":false,"enumerable":false,"writable":false});
 
   function $bufferDuration_get$0() {
@@ -188,6 +190,7 @@ var GranularEngine = (function(super$0){var PRS$0 = (function(o,t){o["__proto__"
    * to generate a single grain according to the current grain parameters.
    */
   proto$0.trigger = function(time) {var outputNode = arguments[1];if(outputNode === void 0)outputNode = this.outputNode;
+    var audioContext = super$0.audioContext;
     var grainTime = time || audioContext.currentTime;
     var grainPeriod = this.periodAbs;
     var grainPosition = this.currentPosition;
